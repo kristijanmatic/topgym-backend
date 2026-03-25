@@ -2,9 +2,21 @@ import express from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
+import { readFileSync } from 'node:fs';
 import { authRouter } from './routes/auth.routes.js';
 import { meRouter } from './routes/me.routes.js';
 import { doorRouter } from './routes/door.routes.js';
+function readAppVersion() {
+    try {
+        const packageJsonPath = new URL('../package.json', import.meta.url);
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+        return packageJson.version ?? 'unknown';
+    }
+    catch {
+        return 'unknown';
+    }
+}
+const appVersion = readAppVersion();
 export function createApp() {
     const app = express();
     app.disable('x-powered-by');
@@ -15,6 +27,9 @@ export function createApp() {
     }));
     app.get('/health', (_req, res) => {
         res.json({ ok: true });
+    });
+    app.get('/', (_req, res) => {
+        res.json({ version: appVersion });
     });
     // Basic global limiter (tune per-route as needed)
     app.use(rateLimit({
